@@ -1,0 +1,96 @@
+Bruteforce - O(n2)
+
+class Solution:
+    def getSkyline(self, buildings: List[List[int]]) -> List[List[int]]:
+        
+        def bruteforce(buildings):
+            #create an array to store heights ranging from 0 to max point 
+            mx_points = [max(x,y) for x,y,z in buildings ]
+            temp_height = [0 for i in range(max(mx_points)+1)]
+
+             #Now iterate over all the points and store in l,r,h.
+            # Iterating over l ro r, check if the previous height is lesser. If less, then update with the new height.
+            for i in range(len(buildings)):
+                l,r,h = buildings[i][0],buildings[i][1],buildings[i][2]
+                for j in range(l,r):
+                    temp_height[j] = max(temp_height[j], h)
+
+            # Declare the last point's height to be zero.
+            temp_height[max(mx_points)]=0
+            print(temp_height)
+            ans=[]
+            # Now itertate over the temp-height array, and 
+            # note the positions where the height is changing and return that array. 
+            for i in range(1,len(temp_height)):
+                if temp_height[i-1]!=temp_height[i]:
+                    ans.append([i,temp_height[i]])
+
+            return ans
+
+        #l = [[0,2,3],[2,5,3]]
+        return bruteforce(buildings)
+
+
+
+#Optimized Solution:
+
+class Solution:
+    def getSkyline(self, buildings: 'List[List[int]]') -> 'List[List[int]]':
+        n = len(buildings)
+        # The base cases
+        if n == 0:
+            return []
+        if n == 1:
+            x_start, x_end, y = buildings[0]
+            return [[x_start, y], [x_end, 0]]
+
+        left_skyline = self.getSkyline(buildings[: n // 2])
+        right_skyline = self.getSkyline(buildings[n // 2 :])
+        return self.merge_skylines(left_skyline, right_skyline)
+
+    def merge_skylines(self, left, right):
+
+        def update_output(x, y):
+            # if skyline change is horizantal  add the new point
+            if not output or output[-1][0] != x: output.append([x, y])
+            # if skyline change is vertical - update the last point
+            else:
+                output[-1][1] = y
+
+        def append_skyline(p, lst, n, y, curr_y):
+            while p < n:
+                x, y = lst[p]
+                p += 1
+                if curr_y != y:
+                    update_output(x, y)
+                    curr_y = y
+
+        n_l, n_r = len(left), len(right)
+        i = j = 0
+        curr_y  = left_y = right_y = 0
+        output = []
+
+        # while we're in the region where both skylines are present
+        while i < n_l and j < n_r:
+            point_l, point_r = left[i], right[j]
+            # pick up the smallest x
+            if point_l[0] < point_r[0]:
+                x, left_y = point_l
+                i += 1
+            else:
+                x, right_y = point_r
+                j += 1
+            # max height (i.e. y) between both skylines
+            max_y = max(left_y, right_y)
+            # if there is a skyline change
+            if curr_y != max_y:
+                update_output(x, max_y)
+                curr_y = max_y
+
+        # there is only left skyline
+        append_skyline(i, left, n_l, left_y, curr_y)
+
+        # there is only right skyline
+        append_skyline(j, right, n_r, right_y, curr_y)
+
+        return output
